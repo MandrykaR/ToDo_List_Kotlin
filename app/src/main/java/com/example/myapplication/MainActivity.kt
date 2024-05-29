@@ -1,20 +1,19 @@
 package com.example.myapplication
 
-import TaskAdapter
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ListView
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-
+import androidx.lifecycle.Observer
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var editText: EditText
     private lateinit var addButton: Button
     private lateinit var listView: ListView
-    private lateinit var tasks: ArrayList<HashMap<String, String>>
-    private lateinit var adapter: TaskAdapter
+    private val taskViewModel: TaskViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,25 +23,25 @@ class MainActivity : AppCompatActivity() {
         addButton = findViewById(R.id.button)
         listView = findViewById(R.id.listView)
 
-        tasks = ArrayList()
-        adapter = TaskAdapter(this, tasks)
+        // Создаем адаптер с пустым списком задач и функцией удаления
+        val adapter = TaskAdapter(this, emptyList()) { task ->
+            taskViewModel.removeTask(task)
+        }
         listView.adapter = adapter
 
+        // Наблюдаем за изменениями в списке задач и обновляем адаптер
+        taskViewModel.tasks.observe(this, Observer { tasks ->
+            adapter.setTasks(tasks)
+        })
+
         addButton.setOnClickListener {
-            val task = editText.text.toString()
-            if (task.isNotEmpty()) {
-                val map = HashMap<String, String>()
-                map["task"] = task
-                tasks.add(map)
-                adapter.notifyDataSetChanged()
+            val taskDescription = editText.text.toString()
+            if (taskDescription.isNotEmpty()) {
+                // Создаем новую задачу с уникальным идентификатором
+                val task = Task(System.currentTimeMillis(), taskDescription)
+                taskViewModel.addTask(task)
                 editText.text.clear()
             }
-        }
-
-        listView.setOnItemLongClickListener { parent, view, position, id ->
-            tasks.removeAt(position)
-            adapter.notifyDataSetChanged()
-            true
         }
     }
 }

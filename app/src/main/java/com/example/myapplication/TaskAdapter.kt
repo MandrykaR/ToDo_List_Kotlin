@@ -1,3 +1,5 @@
+package com.example.myapplication
+
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -5,41 +7,50 @@ import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.ImageButton
 import android.widget.TextView
-import com.example.myapplication.R
 
-class TaskAdapter(private val context: Context, private val tasks: ArrayList<HashMap<String, String>>) : BaseAdapter() {
+class TaskAdapter(
+    private val context: Context,
+    private var tasks: List<Task>,
+    private val removeTask: (Task) -> Unit
+) : BaseAdapter() {
 
-    override fun getCount(): Int {
-        return tasks.size
+    override fun getCount(): Int = tasks.size
+
+    override fun getItem(position: Int): Any = tasks[position]
+
+    override fun getItemId(position: Int): Long = position.toLong()
+
+    fun setTasks(newTasks: List<Task>) {
+        tasks = newTasks
+        notifyDataSetChanged()
     }
 
-    override fun getItem(position: Int): Any {
-        return tasks[position]
-    }
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
+        val view: View
+        val viewHolder: ViewHolder
 
-    override fun getItemId(position: Int): Long {
-        return position.toLong()
-    }
-
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-        var itemView = convertView
-        if (itemView == null) {
-            val inflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-            itemView = inflater.inflate(R.layout.list_item_task, parent, false)
+        if (convertView == null) {
+            view = LayoutInflater.from(context).inflate(R.layout.list_item_task, parent, false)
+            viewHolder = ViewHolder(view)
+            view.tag = viewHolder
+        } else {
+            view = convertView
+            viewHolder = convertView.tag as ViewHolder
         }
 
-        val taskTextView = itemView!!.findViewById<TextView>(R.id.taskTextView)
-        val deleteButton = itemView.findViewById<ImageButton>(R.id.deleteButton)
+        val task = getItem(position) as Task
+        viewHolder.textView.text = task.description
 
-        val task = tasks[position]
-
-        taskTextView.text = task["task"]
-
-        deleteButton.setOnClickListener {
-            tasks.removeAt(position)
-            notifyDataSetChanged()
+        // Установка обработчика нажатия на кнопку удаления
+        viewHolder.deleteButton.setOnClickListener {
+            removeTask(task)
         }
 
-        return itemView
+        return view
+    }
+
+    private class ViewHolder(view: View) {
+        val textView: TextView = view.findViewById(R.id.taskTextView)
+        val deleteButton: ImageButton = view.findViewById(R.id.deleteButton)
     }
 }
